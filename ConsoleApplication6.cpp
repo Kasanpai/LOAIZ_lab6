@@ -1,15 +1,11 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <time.h>
+
+#include "stdio.h"
+#include "cstdlib"
 #include <windows.h>
-#include <locale.h>
 
 
-int** generG(int size) {
-
-
+int** createG(int size) {
     int** G = NULL;
     G = (int**)malloc(size * sizeof(int*));
     for (int i = 0; i < size; i++) {
@@ -17,148 +13,79 @@ int** generG(int size) {
     }
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            G[i][j] = 0;
-        }
-    }
-    for (int i = 0; i < size; i++) {
-        for (int j = i + 1; j < size; j++) {
-            int edge = rand() % 2;
-            G[i][j] = edge;
-            G[j][i] = edge; // Для неориентированного графа
+            G[i][j] = rand() % 2;
+            if (i == j) G[i][j] = 0;
+            G[j][i] = G[i][j];
         }
     }
     return G;
-
 }
 
-
-int** printG(int** G, int size) {
-    printf("Матрица смежности для неориентированного графа:\n");
+void printG(int** G, int size) {
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
             printf("%d ", G[i][j]);
         }
         printf("\n");
     }
-    return G;
+    printf("\n");
+    return;
 }
 
-int** delv(int** G, int size, int v) {
-    int** Gtemp = generG(size - 1);
-
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            if (i < v && j < v) Gtemp[i][j] = G[i][j];
-            if (i > v && j > v) Gtemp[i - 1][j - 1] = G[i][j];
-            if (i > v && j < v) Gtemp[i - 1][j] = G[i][j];
-            if (i < v && j > v) Gtemp[i][j - 1] = G[i][j];
-
-
-        }
-    }
-    for (int i = 0; i < size; i++) {
-        free(G[i]);
-    }
-    free(G);
-    G = NULL;
-    return Gtemp;
-}
-
-
-
-int** unionG(int** G1, int** G2, int size1, int size2) {
-    int sizemax = (size1 > size2) ? size1 : size2;
-    int sizemin = (size1 < size2) ? size1 : size2;
-
-    int** Gmax = (size1 > size2) ? G1 : G2;
-    int** Gmin = (size1 < size2) ? G1 : G2;
-
-    int** Gtemp = generG(sizemax);
-
-    for (int i = 0; i < sizemin; i++) {
-        for (int j = 0; j < sizemin; j++) {
-            Gtemp[i][j] = Gmin[i][j] | Gmax[i][j];
-        }
-    }
-    for (int i = 0; i < sizemax; i++) {
-        for (int j = sizemin; j < sizemax; j++) {
-            Gtemp[i][j] = Gmax[i][j];
-            Gtemp[j][i] = Gtemp[i][j];
+int** decUG(int** G1, int size1, int** G2, int size2, int** G3) {
+    for (int i = 0; i < size1 * size2; i++) {
+        for (int j = 0; j < size1 * size2; j++) {
+            G3[i][j] = 0;
         }
     }
 
-    return Gtemp;
-
-}
-
-int** intersectoinG(int** G1, int** G2, int size1, int size2) {
-    int sizemin = (size1 < size2) ? size1 : size2;
-
-    int** Gtemp = generG(sizemin);
-
-    for (int i = 0; i < sizemin; i++) {
-        for (int j = 0; j < sizemin; j++) {
-            Gtemp[i][j] = G1[i][j] & G2[i][j];
+    for (int i = 0; i < size1; i++) {
+        for (int j = 0; j < size2; j++) {
+            for (int k = 0; k < size1; k++) {
+                for (int l = 0; l < size2; l++) {
+                    if (G1[i][k] == 1 && j == l) {
+                        G3[i * size2 + j][k * size2 + l] = 1;
+                    }
+                    if (G2[j][l] == 1 && i == k) {
+                        G3[i * size2 + j][k * size2 + l] = 1;
+                    }
+                }
+            }
         }
     }
-    return Gtemp;
-}
 
-int** xorG(int** G1, int** G2, int size1, int size2) {
-    int sizemax = (size1 > size2) ? size1 : size2;
-    int sizemin = (size1 < size2) ? size1 : size2;
-
-    int** Gmax = (size1 > size2) ? G1 : G2;
-    int** Gmin = (size1 < size2) ? G1 : G2;
-
-    int** Gtemp = generG(sizemax - sizemin);
-
-    for (int i = sizemin; i < sizemax; i++) {
-        for (int j = sizemin; j < sizemax; j++) {
-            Gtemp[i - sizemin][j - sizemin] = Gmax[i][j];
-        }
-    }
-    return Gtemp;
-
+    return G3;
 }
 
 int main(void) {
 
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    int sizeG1 = 0, sizeG2 = 0, sizeG3 = 0;
+    int** G1 = NULL;
+    int** G2 = NULL;
+    int** G3 = NULL;
 
-    int sizeG1 = 3, sizeG2 = 5;
-    setlocale(LC_ALL, "");
+    srand(1235235235);
 
     printf("Введите количество вершин графа 1: ");
     scanf("%d", &sizeG1);
     printf("Введите количество вершин графа 2: ");
     scanf("%d", &sizeG2);
 
-    int** G1 = generG(sizeG1);
-    int** G2 = generG(sizeG2);
+    G1 = createG(sizeG1);
 
-
-    printf("граф 1 ");
+    printf("1 граф\n");
     printG(G1, sizeG1);
 
+    G2 = createG(sizeG2);
 
-    printf("граф 2 ");
+    printf("2 граф\n");
     printG(G2, sizeG2);
 
-    int** G3 = unionG(G1, G2, sizeG1, sizeG2);
-    int sizeG3 = (sizeG1 > sizeG2) ? sizeG1 : sizeG2;
-    printf("\nОбъединение графов\n");
-    printG(G3, sizeG3);
-
-    int** G4 = intersectoinG(G1, G2, sizeG1, sizeG2);
-    int sizeG4 = (sizeG1 < sizeG2) ? sizeG1 : sizeG2;
-    printf("\nПересечение графов\n");
-    printG(G4, sizeG4);
-
-    int** G5 = xorG(G1, G2, sizeG1, sizeG2);
-    int sizeG5 = (sizeG1 < sizeG2) ? sizeG2 - sizeG1 : sizeG1 - sizeG2;
-    printf("\nКольцевая сумма\n");
-    printG(G5, sizeG5);
-
-    return 0;
+    G3 = createG(sizeG1 * sizeG2);
+    G3 = decUG(G1, sizeG1, G2, sizeG2, G3);
+    printf("Матрица смежности декартова произведения графов:\n");
+    printG(G3, sizeG1 * sizeG2);
 
 }
